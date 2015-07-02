@@ -1,0 +1,87 @@
+drop table if exists vote_count2011 CASCADE;
+drop table if exists vote_count2014 CASCADE;
+drop table if exists booth2011 CASCADE;
+drop table if exists booth2014 CASCADE;
+drop table if exists booth CASCADE;
+drop table if exists parties CASCADE;
+drop table if exists other CASCADE;
+drop table if exists area_units;
+drop table if exists coastline;
+drop table if exists electorate_boundaries_2014;
+drop table if exists "general-electoral-district-boundaries";
+drop table if exists regional;
+drop index if exists idx_booth2014_geom;
+drop index if exists idx_booth2011_geom;
+
+
+create table booth2014(
+       electorate_number integer,
+       electorate_name varchar,
+       voting_place_id integer PRIMARY KEY,
+       voting_place_suburb varchar,
+       voting_place_address varchar,
+       NZTM2000_Northing float,
+       NZTM2000_Easting float,
+       NZMG_Northing float,
+       NZMG_Easting float,
+       geom geometry(POINT, 2193));
+
+
+create table booth2011(
+       electorate_number integer,
+       electorate_name varchar,
+       voting_place_id integer  PRIMARY KEY,
+       voting_place_suburb varchar,
+       voting_place_address varchar,
+       NZTM2000_Northing float,
+       NZTM2000_Easting float,       
+       geom geometry(POINT, 2193));
+
+
+
+create table booth(
+       electorate_number integer,
+       electorate_name varchar,
+       voting_place_id integer  PRIMARY KEY,
+       voting_place_suburb varchar,
+       voting_place_address varchar,
+       NZTM2000_Northing float,
+       NZTM2000_Easting float,       
+       geom geometry(POINT, 2193));
+
+create table other(
+       id serial PRIMARY KEY,
+       count_type varchar);
+       
+
+create table parties(
+       pid serial PRIMARY KEY,
+       pname varchar);
+
+create table vote_count2014 (
+       id serial primary key,
+       bid2014 integer references booth(voting_place_id),
+       oid integer references other(id),
+       pid integer,
+       votes integer,
+       electorate varchar);
+
+create table vote_count2011 (
+       id serial primary key,
+       bid2014 integer references booth(voting_place_id),
+       oid integer references other(id),
+       pid integer,
+       votes integer,
+       electorate varchar);
+
+
+
+\copy booth2014( electorate_number, electorate_name, voting_place_id, voting_place_suburb, voting_place_address, NZTM2000_Northing, NZTM2000_Easting, NZMG_Northing, NZMG_Easting) from '/home/sstewart/greens/work/vote_stats/data/2014_Voting_Place_Co-ordinates.csv' CSV HEADER QUOTE '"'
+
+\copy booth2011( electorate_number, electorate_name, voting_place_id, voting_place_suburb, voting_place_address, NZTM2000_Northing, NZTM2000_Easting) from '/home/sstewart/greens/work/vote_stats/data/2011_Polling_Place_Co-ordinates.csv' CSV HEADER QUOTE '"'
+
+
+UPDATE booth2014 set geom = ST_SETSRID(ST_MakePoint(NZTM2000_Northing, NZTM2000_Easting), 2193);
+UPDATE booth2011 set geom = ST_SETSRID(ST_MakePoint(NZTM2000_Northing, NZTM2000_Easting), 2193);
+CREATE INDEX idx_booth2014_geom on booth2014 USING GIST(geom);
+CREATE INDEX idx_booth2011_geom on booth2011 USING GIST(geom);
